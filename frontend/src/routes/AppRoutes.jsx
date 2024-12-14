@@ -1,17 +1,17 @@
 // src/routes/AppRoutes.jsx
-import { createBrowserRouter } from 'react-router-dom';
-import Login from '../components/Login';
-import Dashboard from '../components/Dashboard';
-import Navbar from '../components/Navbar';
-import PrivateRoute from '../utils/privateRoute';
+import { createBrowserRouter } from "react-router-dom";
+import Login from "../components/Login";
+import Dashboard from "../components/Dashboard";
+import Navbar from "../components/NavBar.jsx";
+import PrivateRoute from "../utils/privateRoute";
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <Login />,
   },
   {
-    path: '/dashboard',
+    path: "/dashboard",
     element: (
       <PrivateRoute>
         <Navbar />
@@ -21,4 +21,4 @@ const router = createBrowserRouter([
   },
 ]);
 
-export default router;  // Ensure this is correctly exported
+export default router; // Ensure this is correctly exported
