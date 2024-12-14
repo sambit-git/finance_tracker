@@ -8,12 +8,11 @@ export default (sequelize, DataTypes) => {
       },
       paymentMethod: {
         type: DataTypes.STRING,
-        allowNull: false,
       },
       app: {
         type: DataTypes.STRING,
       },
-      creditDebit: {
+      type: {
         type: DataTypes.ENUM("credit", "debit"),
         allowNull: false,
         defaultValue: "debit",
@@ -29,33 +28,6 @@ export default (sequelize, DataTypes) => {
     },
     {
       timestamps: true,
-      hooks: {
-        async beforeValidate(payment) {
-          if (!payment.paymentMethod && payment.account_id) {
-            // Fetch the associated Account to determine the type
-            const account = await sequelize.models.Account.findByPk(
-              payment.account_id
-            );
-            if (account) {
-              switch (account.type) {
-                case "cash":
-                  payment.paymentMethod = "cash";
-                  break;
-                case "wallet":
-                  payment.paymentMethod = "digital wallet";
-                  break;
-                case "bank":
-                  payment.paymentMethod = "upi";
-                  break;
-                default:
-                  throw new Error("Invalid account type");
-              }
-            } else {
-              throw new Error("Associated account not found");
-            }
-          }
-        },
-      },
     }
   );
 

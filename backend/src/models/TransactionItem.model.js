@@ -19,7 +19,6 @@ export default (sequelize, DataTypes) => {
       },
       mrp: {
         type: DataTypes.DECIMAL(12, 2),
-        allowNull: false,
       },
       discountPercent: {
         type: DataTypes.DECIMAL(5, 2),
@@ -43,20 +42,6 @@ export default (sequelize, DataTypes) => {
     },
     {
       timestamps: true,
-      hooks: {
-        beforeValidate(transactionItem) {
-          // Set finalAmount to mrp if not explicitly provided
-          if (transactionItem.mrp == null) {
-            transactionItem.mrp = transactionItem.finalAmount;
-          }
-        },
-        // async afterSave(transactionItem, options) {
-        //   await updateTransactionFinalAmount(transactionItem.transaction_id);
-        // },
-        // async afterDestroy(transactionItem, options) {
-        //   await updateTransactionFinalAmount(transactionItem.transaction_id);
-        // },
-      },
     }
   );
 

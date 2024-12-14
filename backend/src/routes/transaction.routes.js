@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createTransaction,
+  getAllTransactions,
   // updateTransactionStatus,
   getTransactionById,
   deleteTransaction,
@@ -11,6 +12,7 @@ const router = express.Router();
 
 // Create a new transaction
 router.post("/create", authenticateToken, createTransaction);
+router.get("/all", authenticateToken, getAllTransactions);
 
 // Update the status of a transaction
 // router.patch(

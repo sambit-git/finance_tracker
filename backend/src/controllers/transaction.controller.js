@@ -1,8 +1,7 @@
 import model from "../models/index.js";
 import sequelize from "../config/database.config.js";
-import logger from "../config/logger.config.js";
 
-const { Transaction, TransactionItem, Payment } = model;
+const { Transaction, TransactionItem, Payment, Account } = model;
 /**
  * Create a new transaction with items and payments
  */
@@ -71,12 +70,40 @@ export const createTransaction = async (req, res, next) => {
       }
 
       // Step 4: Add Payments
-      const paymentEntries = payments.map((payment) => ({
-        ...payment,
-        transaction_id: transaction.id,
-        amount: payment.amount || transaction.finalAmount, // Default to transaction's finalAmount
-      }));
-      await Payment.bulkCreate(paymentEntries, { transaction: t });
+      if(payments?.length > 0){
+        const paymentsTotal = payments.reduce(
+          (sum, item) => sum + parseFloat(item.amount || 0),
+          0
+        );
+        if (paymentsTotal != transaction.finalAmount) throw new Error("Total amount paid must match with transaction final amount.");
+        for (const payment of payments){
+          const account = await Account.findOne({where: { id: payment.account_id}})
+          if (!account) {
+            throw new Error(`Account with ID ${payment.account_id} not found`);
+          }
+  
+          if (account.balance < payment.amount) {
+            throw new Error(
+              `Insufficient funds in account with ID ${payment.account_id}`
+            );
+          }
+          // Deduct the payment amount from the bank account
+          account.balance -= payment.amount;
+          await account.save()
+          
+          // Create the payment entry
+          await Payment.create(
+            {
+              ...payment,
+              transaction_id: transaction.id,
+              balance: account.balance,
+            },
+            { transaction: t }
+          );
+        }
+      }else{
+        throw new Error("Transaction can't be saved without payments.")
+      }
 
       return transaction;
     });
