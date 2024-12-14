@@ -13,6 +13,11 @@ export default (sequelize, DataTypes) => {
       balance: {
         type: DataTypes.DECIMAL(12, 2),
         defaultValue: 0.0,
+        get() {
+          // Convert balance from string to number when retrieving
+          const rawValue = this.getDataValue("balance");
+          return parseFloat(rawValue);
+        },
       },
     },
     {

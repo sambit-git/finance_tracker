@@ -82,13 +82,17 @@ export const createTransaction = async (req, res, next) => {
             throw new Error(`Account with ID ${payment.account_id} not found`);
           }
   
-          if (account.balance < payment.amount) {
-            throw new Error(
-              `Insufficient funds in account with ID ${payment.account_id}`
-            );
+          // Deduct/Add the payment amount from/to the account
+          if (payment.type === 'credit') account.balance += payment.amount;
+          else{
+            if (account.balance < payment.amount) {
+              throw new Error(
+                `Insufficient funds in account with ID ${payment.account_id}`
+              );
+            }
+            account.balance -= payment.amount;
           }
-          // Deduct the payment amount from the bank account
-          account.balance -= payment.amount;
+
           await account.save()
           
           // Create the payment entry
