@@ -3,13 +3,11 @@ import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { login } from '../store/authSlice';
 import { login as loginService } from '../api/authServices.js';
-import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [error, setError] = useState(null);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,7 +19,6 @@ const Login = () => {
     try {
       const { token, user } = await loginService(credentials);
       dispatch(login({ token, user }));
-      navigate('/dashboard');
     } catch (err) {
       setError('Invalid login credentials');
     }

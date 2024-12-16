@@ -43,7 +43,7 @@ const TransactionsList = ({ transactions }) => {
 
           {/* Transactions for the Date */}
           {expandedDate === date && (
-            <div className="mt-4 space-y-4 pl-6 border-l-4 border-gray-300">
+            <div className="mt-4 space-y-4 pl-6">
               {groupedTransactions[date].map((transaction) => (
                 <div
                   key={transaction.id}

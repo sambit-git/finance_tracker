@@ -12,9 +12,9 @@ export const login = async (credentials) => {
 
 export const fetchUserProfile = async () => {
   try {
-    const { data } = await apiClient.get("/profile");
+    const { data } = await apiClient.get("auth/me");
     return data;
   } catch (error) {
-    throw error;
+    return error.response.data.error;
   }
 };

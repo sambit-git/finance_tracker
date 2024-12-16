@@ -8,10 +8,6 @@ import PrivateRoute from "../utils/privateRoute";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Login />,
-  },
-  {
-    path: "/dashboard",
     element: (
       <PrivateRoute>
         <Navbar />
