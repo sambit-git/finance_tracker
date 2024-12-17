@@ -8,6 +8,7 @@ const { Transaction, TransactionItem, Payment, Account } = model;
 export const createTransaction = async (req, res, next) => {
   const {
     title,
+    type,
     totalAmount,
     discountPercentage,
     couponCode,
@@ -29,6 +30,7 @@ export const createTransaction = async (req, res, next) => {
       const transaction = await Transaction.create(
         {
           title,
+          type,
           discountPercentage,
           couponCode,
           couponDiscount,
@@ -70,21 +72,26 @@ export const createTransaction = async (req, res, next) => {
       }
 
       // Step 4: Add Payments
-      if(payments?.length > 0){
+      if (payments?.length > 0) {
         const paymentsTotal = payments.reduce(
           (sum, item) => sum + parseFloat(item.amount || 0),
           0
         );
-        if (paymentsTotal != transaction.finalAmount) throw new Error("Total amount paid must match with transaction final amount.");
-        for (const payment of payments){
-          const account = await Account.findOne({where: { id: payment.account_id}})
+        if (paymentsTotal != transaction.finalAmount)
+          throw new Error(
+            "Total amount paid must match with transaction final amount."
+          );
+        for (const payment of payments) {
+          const account = await Account.findOne({
+            where: { id: payment.account_id },
+          });
           if (!account) {
             throw new Error(`Account with ID ${payment.account_id} not found`);
           }
-  
+
           // Deduct/Add the payment amount from/to the account
-          if (payment.type === 'credit') account.balance += payment.amount;
-          else{
+          if (transaction.type === "credit") account.balance += payment.amount;
+          else {
             if (account.balance < payment.amount) {
               throw new Error(
                 `Insufficient funds in account with ID ${payment.account_id}`
@@ -93,8 +100,8 @@ export const createTransaction = async (req, res, next) => {
             account.balance -= payment.amount;
           }
 
-          await account.save()
-          
+          await account.save();
+
           // Create the payment entry
           await Payment.create(
             {
@@ -105,8 +112,8 @@ export const createTransaction = async (req, res, next) => {
             { transaction: t }
           );
         }
-      }else{
-        throw new Error("Transaction can't be saved without payments.")
+      } else {
+        throw new Error("Transaction can't be saved without payments.");
       }
 
       return transaction;

@@ -12,11 +12,6 @@ export default (sequelize, DataTypes) => {
       app: {
         type: DataTypes.STRING,
       },
-      type: {
-        type: DataTypes.ENUM("credit", "debit"),
-        allowNull: false,
-        defaultValue: "debit",
-      },
       status: {
         type: DataTypes.STRING,
         defaultValue: "Completed",

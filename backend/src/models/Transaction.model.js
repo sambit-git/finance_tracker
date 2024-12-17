@@ -6,6 +6,11 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      type: {
+        type: DataTypes.ENUM("credit", "debit"),
+        allowNull: false,
+        defaultValue: "debit",
+      },
       totalAmount: {
         type: DataTypes.DECIMAL(12, 2),
         allowNull: false,
