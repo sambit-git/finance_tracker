@@ -1,5 +1,5 @@
 // src/context/ErrorContext.js
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useCallback } from "react";
 
 const ErrorContext = createContext();
 
@@ -10,12 +10,12 @@ export const useErrorContext = () => {
 export const ErrorProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
-  const handleError = (errorMessage) => {
+  const handleError = useCallback((errorMessage) => {
     setError(errorMessage);
     setTimeout(() => {
       setError(null);
     }, 5000);
-  };
+  }, []);
 
   return (
     <ErrorContext.Provider value={{ error, handleError }}>
