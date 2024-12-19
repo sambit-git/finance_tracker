@@ -53,7 +53,7 @@ const transactionsSlice = createSlice({
       state.status = "succeeded";
     },
     addTransaction(state, action) {
-      state.transactions.push(action.payload);
+      state.transactions.unshift(action.payload);
       state.groupedTransactions = groupTransactionsByDate(state.transactions);
     },
     updateTransaction(state, action) {
