@@ -43,7 +43,7 @@ const Dashboard = () => {
       <TransactionsList />
       <button
         onClick={openModal}
-        className="px-4 py-2 bg-indigo-600 text-white rounded-md absolute bottom-4 right-4"
+        className="px-4 py-2 bg-indigo-600 text-white rounded-md fixed bottom-4 right-4"
       >
         +
       </button>
