@@ -1,14 +1,36 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
+import { addTransaction } from "../api/transactionServices";
+import {
+  addTransaction as addTransactionToStore,
+  updateTransaction,
+} from "../store/transactionsSlice";
 
 const CreateTransaction = ({ isOpen, closeModal, accounts }) => {
   const [transactionData, setTransactionData] = useState({
     title: "",
-    items: [{ name: "", quantity: 1, unit: "", finalAmount: 0 }],
+    items: [],
     payments: [
-      { accountId: "", amount: 0, paymentMethod: "", app: "", type: "" },
+      {
+        account_id: "",
+        amount: 0,
+        paymentMethod: "upi",
+        app: "",
+        status: "Completed",
+      },
     ],
     type: "debit",
+    finalAmount: 0,
   });
+
+  const transactionFinalAmount = useRef([]);
+
+  const calculateItemsTotalAmount = (value, index) => {
+    transactionFinalAmount.current[index] = parseFloat(value);
+    return transactionFinalAmount.current.reduce(
+      (total, amount) => total + amount,
+      0
+    );
+  };
 
   const handleChange = (e, field, index, type) => {
     const value = e.target.value;
@@ -16,6 +38,12 @@ const CreateTransaction = ({ isOpen, closeModal, accounts }) => {
       const newData = { ...prevData };
       if (type === "item") {
         newData.items[index][field] = value;
+        if (field === "finalAmount" && value !== "") {
+          newData.payments[0]["amount"] = calculateItemsTotalAmount(
+            value,
+            index
+          );
+        }
       } else if (type === "payment") {
         newData.payments[index][field] = value;
       } else {
@@ -30,9 +58,10 @@ const CreateTransaction = ({ isOpen, closeModal, accounts }) => {
       ...prevData,
       items: [
         ...prevData.items,
-        { name: "", quantity: 1, unit: "", finalAmount: 0 },
+        { name: "", quantity: 1, unit: "no.", finalAmount: "" },
       ],
     }));
+    transactionFinalAmount.current.push(0);
   };
 
   const handleAddPayment = () => {
@@ -40,13 +69,22 @@ const CreateTransaction = ({ isOpen, closeModal, accounts }) => {
       ...prevData,
       payments: [
         ...prevData.payments,
-        { accountId: "", amount: 0, paymentMethod: "", app: "", type: "" },
+        {
+          account_id: "",
+          amount: 0,
+          paymentMethod: "",
+          app: "",
+          status: "Completed",
+        },
       ],
     }));
   };
 
   const handleDeleteItem = (index) => {
     const updatedItems = transactionData.items.filter((_, i) => i !== index);
+    transactionFinalAmount.current = transactionFinalAmount.current.filter(
+      (_, i) => i !== index
+    );
     setTransactionData((prevData) => ({ ...prevData, items: updatedItems }));
   };
 
@@ -60,9 +98,18 @@ const CreateTransaction = ({ isOpen, closeModal, accounts }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Transaction Data:", transactionData);
+    const updatedTransactionData = {
+      ...transactionData,
+      finalAmount: transactionData.payments.reduce(
+        (total, payment) => total + parseFloat(payment.amount),
+        0
+      ),
+    };
+    const newTransaction = await addTransaction(updatedTransactionData);
+    addTransactionToStore(newTransaction);
     closeModal();
   };
 
@@ -254,12 +301,16 @@ const CreateTransaction = ({ isOpen, closeModal, accounts }) => {
                       <label className="block text-sm font-medium text-gray-700">
                         Unit
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={item.unit}
                         onChange={(e) => handleChange(e, "unit", index, "item")}
                         className="mt-2 p-3 w-full border border-gray-300 rounded-md"
-                      />
+                        required
+                      >
+                        <option value="no.">Pieces</option>
+                        <option value="kg">KG</option>
+                        <option value="litres">Litres</option>
+                      </select>
                     </div>
 
                     <div>
@@ -327,9 +378,9 @@ const CreateTransaction = ({ isOpen, closeModal, accounts }) => {
                         Account
                       </label>
                       <select
-                        value={payment.accountId}
+                        value={payment.account_id}
                         onChange={(e) =>
-                          handleChange(e, "accountId", index, "payment")
+                          handleChange(e, "account_id", index, "payment")
                         }
                         className="mt-2 p-3 w-full border border-gray-300 rounded-md"
                         required

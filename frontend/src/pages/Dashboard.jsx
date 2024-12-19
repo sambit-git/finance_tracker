@@ -37,13 +37,10 @@ const Dashboard = () => {
   }, [dispatch, handleError]);
 
   const accounts = useSelector((store) => store.accounts.accounts);
-  const groupedTransactions = useSelector(
-    (store) => store.transactions.groupedTransactions
-  );
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 relative">
-      <TransactionsList groupedTransactions={groupedTransactions} />
+      <TransactionsList />
       <button
         onClick={openModal}
         className="px-4 py-2 bg-indigo-600 text-white rounded-md absolute bottom-4 right-4"

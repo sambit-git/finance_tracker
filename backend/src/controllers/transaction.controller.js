@@ -152,8 +152,13 @@ export const getAllTransactions = async (req, res) => {
     const transactions = await Transaction.findAll({
       include: [
         { model: TransactionItem, as: "items" },
-        { model: Payment, as: "payments" },
+        {
+          model: Payment,
+          as: "payments",
+          include: { model: Account, as: "account" },
+        },
       ],
+      order: [["timestamp", "DESC"]],
     });
 
     return res.status(200).json(transactions);

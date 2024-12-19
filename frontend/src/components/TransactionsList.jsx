@@ -1,7 +1,11 @@
 import { useState } from "react";
 import TransactionItem from "./TransactionItem";
+import { useSelector } from "react-redux";
 
-const TransactionsList = ({ groupedTransactions }) => {
+const TransactionsList = ({}) => {
+  const groupedTransactions = useSelector(
+    (store) => store.transactions.groupedTransactions
+  );
   const [expandedDate, setExpandedDate] = useState(null);
 
   const toggleDate = (date) => {
@@ -18,19 +22,19 @@ const TransactionsList = ({ groupedTransactions }) => {
             {/* Date Header with Total Expense */}
             <div
               onClick={() => toggleDate(date)}
-              className="flex justify-between items-center bg-indigo-200 p-4 rounded-md shadow cursor-pointer hover:bg-indigo-300 transition"
+              className="flex justify-between items-center bg-indigo-100 p-4 rounded-md shadow cursor-pointer hover:bg-indigo-300 transition"
             >
               <h3 className="font-bold text-gray-700">
                 {date.substring(0, 6)}
               </h3>
               <div className="flex flex-col text-right flex-1">
                 {totalCredit > 0 && (
-                  <p className="font-semibold text-lg text-green-700">
+                  <p className="font-semibold text-lg text-lime-600">
                     ₹{Intl.NumberFormat("en-IN").format(totalCredit)}
                   </p>
                 )}
                 {totalDebit > 0 && (
-                  <p className="font-semibold text-lg text-gray-500">
+                  <p className="font-semibold text-lg text-salmon">
                     ₹{Intl.NumberFormat("en-IN").format(totalDebit)}
                   </p>
                 )}
