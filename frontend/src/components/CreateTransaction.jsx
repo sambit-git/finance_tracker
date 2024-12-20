@@ -1,9 +1,7 @@
 import React, { useRef, useState } from "react";
 import { addTransaction } from "../api/transactionServices";
-import {
-  addTransaction as addTransactionToStore,
-  updateTransaction,
-} from "../store/transactionsSlice";
+import { useDispatch } from "react-redux";
+import { addTransaction as addTransactionToStore } from "../store/transactionsSlice";
 
 const CreateTransaction = ({ isOpen, closeModal, accounts }) => {
   const [transactionData, setTransactionData] = useState({
@@ -21,6 +19,8 @@ const CreateTransaction = ({ isOpen, closeModal, accounts }) => {
     type: "debit",
     finalAmount: 0,
   });
+
+  const dispatch = useDispatch();
 
   const transactionFinalAmount = useRef([]);
 
@@ -109,8 +109,23 @@ const CreateTransaction = ({ isOpen, closeModal, accounts }) => {
       ),
     };
     const newTransaction = await addTransaction(updatedTransactionData);
-    addTransactionToStore(newTransaction);
+    dispatch(addTransactionToStore(newTransaction?.transaction));
     closeModal();
+    setTransactionData({
+      title: "",
+      items: [],
+      payments: [
+        {
+          account_id: "",
+          amount: 0,
+          paymentMethod: "upi",
+          app: "",
+          status: "Completed",
+        },
+      ],
+      type: "debit",
+      finalAmount: 0,
+    });
   };
 
   return (
