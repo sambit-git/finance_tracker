@@ -21,6 +21,9 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
 
+      - name: Verify directory structure
+        run: ls -R # Verify the repo structure to ensure we're working in the correct path
+
       - name: Install dependencies in app directory # Step 3: Install dependencies
         run: npm ci # This runs the npm command
-        working-directory: ./backend # Ensure this points to the correct directory
+        working-directory: ${{ github.workspace }}/backend # Ensure this points to the correct directory
