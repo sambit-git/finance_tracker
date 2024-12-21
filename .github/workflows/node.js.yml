@@ -23,4 +23,4 @@ jobs:
 
       - name: Install dependencies in app directory # Step 3: Install dependencies
         run: npm ci # This runs the npm command
-        working-directory: ./app # Ensure this points to the correct directory
+        working-directory: ./backend # Ensure this points to the correct directory
