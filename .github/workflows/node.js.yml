@@ -13,17 +13,13 @@ jobs:
         node-version: [20.x]
 
     steps:
-      - uses: actions/checkout@v4 # Step 1: Checkout the code
+      - uses: actions/checkout@v4 # Checkout the code
 
-      - name: Use Node.js ${{ matrix.node-version }} # Step 2: Setup Node.js
+      - name: Use Node.js ${{ matrix.node-version }} # Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
+          node-version: ${{ matrix.node-version }} # Remove 'cache' for simplicity
 
-      - name: Verify directory structure
-        run: ls -R # Verify the repo structure to ensure we're working in the correct path
-
-      - name: Install dependencies in app directory # Step 3: Install dependencies
-        run: npm ci # This runs the npm command
-        working-directory: ${{ github.workspace }}/backend # Ensure this points to the correct directory
+      - name: Install dependencies in backend directory
+        run: npm ci # Run npm ci in the backend directory
+        working-directory: ./backend
