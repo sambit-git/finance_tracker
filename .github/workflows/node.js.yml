@@ -23,3 +23,6 @@ jobs:
       - name: Install dependencies in backend directory
         run: npm ci # Run npm ci in the backend directory
         working-directory: ./backend
+
+      - name: Starting the Server
+        run: pm2 restart Backend
