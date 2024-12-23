@@ -41,10 +41,13 @@ jobs:
       - name: Restart Backend with PM2
         working-directory: ./backend
         run: |
+          touch .env
+          echo "${{secrets.FINANCEENV}}" > .env
           pm2 restart Backend
 
       # Step 6: Start frontend with PM2
       - name: Start Frontend with PM2
         working-directory: ./frontend
         run: |
+          echo "${{secrets.FINANCE_UI}}" > .env
           pm2 restart Frontend
