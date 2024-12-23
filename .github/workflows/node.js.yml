@@ -41,10 +41,10 @@ jobs:
       - name: Restart Backend with PM2
         working-directory: ./backend
         run: |
-          pm2 start src/index.js --name Backend --watch --update-env
+          pm2 restart Backend
 
       # Step 6: Start frontend with PM2
       - name: Start Frontend with PM2
         working-directory: ./frontend
         run: |
-          pm2 start "serve -s dist --listen 3000" --name Frontend --update-env
+          pm2 restart Frontend
