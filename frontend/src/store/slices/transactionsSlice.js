@@ -1,4 +1,52 @@
-// src/store/transactionsSlice.js
+// import { createSlice } from "@reduxjs/toolkit";
+
+// const initialState = {
+//   transactions: [],
+//   filters: {
+//     search: "",
+//     dateRange: {
+//       start: null,
+//       end: null,
+//     },
+//     categories: [],
+//   },
+//   loading: false,
+//   error: null,
+// };
+
+// const transactionsSlice = createSlice({
+//   name: "transactions",
+//   initialState,
+//   reducers: {
+//     setTransactions: (state, action) => {
+//       state.transactions = action.payload;
+//     },
+//     addTransaction: (state, action) => {
+//       state.transactions.push(action.payload);
+//     },
+//     updateTransaction: (state, action) => {
+//       const index = state.transactions.findIndex(
+//         (tx) => tx.id === action.payload.id
+//       );
+//       if (index !== -1) {
+//         state.transactions[index] = action.payload;
+//       }
+//     },
+//     setFilters: (state, action) => {
+//       state.filters = { ...state.filters, ...action.payload };
+//     },
+//   },
+// });
+
+// export const {
+//   setTransactions,
+//   addTransaction,
+//   updateTransaction,
+//   setFilters,
+// } = transactionsSlice.actions;
+// export default transactionsSlice.reducer;
+
+// // src/store/transactionsSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
 // Helper function to group transactions by date and calculate totals
@@ -39,8 +87,14 @@ const groupTransactionsByDate = (transactions) => {
 const initialState = {
   transactions: [], // Raw transactions
   groupedTransactions: {}, // Transactions grouped by date
-  status: "idle", // 'idle', 'loading', 'succeeded', 'failed'
-  error: null, // To store error messages
+  filters: {
+    search: "",
+    dateRange: {
+      start: null,
+      end: null,
+    },
+    categories: [],
+  },
 };
 
 const transactionsSlice = createSlice({
@@ -50,7 +104,6 @@ const transactionsSlice = createSlice({
     setTransactions(state, action) {
       state.transactions = action.payload;
       state.groupedTransactions = groupTransactionsByDate(action.payload);
-      state.status = "succeeded";
     },
     addTransaction(state, action) {
       state.transactions.unshift(action.payload);
@@ -71,12 +124,8 @@ const transactionsSlice = createSlice({
       );
       state.groupedTransactions = groupTransactionsByDate(state.transactions);
     },
-    setLoading(state) {
-      state.status = "loading";
-    },
-    setError(state, action) {
-      state.status = "failed";
-      state.error = action.payload;
+    setFilters: (state, action) => {
+      state.filters = { ...state.filters, ...action.payload };
     },
   },
 });
@@ -86,8 +135,7 @@ export const {
   addTransaction,
   updateTransaction,
   deleteTransaction,
-  setLoading,
-  setError,
+  setFilters,
 } = transactionsSlice.actions;
 
 export default transactionsSlice.reducer;

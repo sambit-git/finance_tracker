@@ -6,7 +6,16 @@ export const login = async (credentials) => {
     const { data } = await apiClient.post("auth/login", credentials);
     return data;
   } catch (error) {
-    throw error; // propagate error to be handled globally
+    throw error;
+  }
+};
+
+export const register = async (userData) => {
+  try {
+    const { data } = await apiClient.post("auth/register", userData);
+    return data;
+  } catch (error) {
+    throw error;
   }
 };
 

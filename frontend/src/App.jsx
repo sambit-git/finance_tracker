@@ -1,20 +1,30 @@
-// src/App.jsx
-import { Provider } from "react-redux";
-import store from "./store";
-import { RouterProvider } from "react-router-dom";
-import AppRoutes from "./routes/AppRoutes";
-import { ErrorProvider } from "./context/ErrorContext";
+import AuthForm from "./components/AuthForm";
+import Dashboard from "./components/Dashboard";
+import { useSelector, useDispatch } from "react-redux";
+import { useEffect } from "react";
+import { fetchUserProfile } from "./api/authServices";
+import { setUser } from "./store/slices/authSlice";
+function App() {
+  const dispatch = useDispatch();
 
-const App = () => {
-  return (
-    <Provider store={store}>
-      <ErrorProvider>
-        <div className="flex flex-col min-h-screen">
-          <RouterProvider router={AppRoutes} />
-        </div>
-      </ErrorProvider>
-    </Provider>
-  );
-};
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const res = await fetchUserProfile();
+        if (res === "Invalid or expired token") {
+          localStorage.removeItem("token");
+        } else {
+          dispatch(setUser({ token, user: res.user }));
+        }
+      }
+    };
+
+    initializeAuth();
+  }, [dispatch]);
+
+  const user = useSelector((state) => state.auth.user);
+  return user ? <Dashboard /> : <AuthForm />;
+}
 
 export default App;

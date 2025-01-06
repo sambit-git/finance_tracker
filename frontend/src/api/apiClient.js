@@ -26,10 +26,9 @@ apiClient.interceptors.response.use(
   (error) => {
     // Customize error handling, logging, and redirecting
     if (error.response && error.response.status === 401) {
-      // Unauthorized, redirect to login
       localStorage.removeItem("token");
     }
-    return Promise.reject(error);
+    return Promise.resolve(error.response);
   }
 );
 
