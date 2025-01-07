@@ -13,7 +13,7 @@ export default (sequelize, DataTypes) => {
       },
       unit: {
         // Enum for units
-        type: DataTypes.ENUM("no.", "kg", "litres"),
+        type: DataTypes.ENUM("no.", "pcs", "kg", "litres"),
         allowNull: false,
         defaultValue: "no.",
       },
