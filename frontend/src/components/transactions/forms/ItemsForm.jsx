@@ -108,7 +108,6 @@ const ItemsForm = ({ items, setItems, handleChange }) => {
             </label>
             <input
               type="number"
-              required
               min="0"
               step="0.01"
               max="100"
