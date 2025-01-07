@@ -37,17 +37,25 @@ jobs:
         working-directory: ./backend
         run: npm ci
 
-      # Step 5: Start backend with PM2
+      # Step 5: Start Backend with PM2
       - name: Restart Backend with PM2
         working-directory: ./backend
         run: |
           touch .env
           echo "${{secrets.FINANCEENV}}" > .env
-          pm2 restart Backend
+          pm2 restart Backend || pm2 start "npm run start" --name Backend
 
-      # Step 6: Start frontend with PM2
-      - name: Start Frontend with PM2
+      # Step 6: Start or Reload Frontend with PM2
+      - name: Start or Reload Frontend with PM2
         working-directory: ./frontend
         run: |
           echo "${{secrets.FINANCE_UI}}" > .env
-          pm2 restart Frontend --update-env
+          if pm2 describe Frontend > /dev/null; then
+            pm2 reload Frontend --update-env
+          else
+            pm2 start "serve -s dist --listen 5173" --name Frontend --update-env
+          fi
+
+      # Step 7: Save PM2 process list
+      - name: Save PM2 process list
+        run: pm2 save
