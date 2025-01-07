@@ -50,4 +50,4 @@ jobs:
         working-directory: ./frontend
         run: |
           echo "${{secrets.FINANCE_UI}}" > .env
-          pm2 restart Frontend
+          pm2 restart Frontend --update-env
