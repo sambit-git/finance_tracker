@@ -46,15 +46,18 @@ jobs:
           pm2 restart Backend || pm2 start "npm run start" --name Backend
 
       # Step 6: Start or Reload Frontend with PM2
-      - name: Start or Reload Frontend with PM2
+      - name: Start Frontend with PM2
         working-directory: ./frontend
         run: |
           echo "${{secrets.FINANCE_UI}}" > .env
-          if pm2 describe Frontend > /dev/null; then
-            pm2 reload Frontend --update-env
-          else
-            pm2 start "serve -s dist --listen 5173" --name Frontend --update-env
-          fi
+          npm run build
+          echo "Frontend is built again"
+          pm2 stop Frontend
+          echo "pm2 Frontend instance is stopped"
+          pm2 delete Frontend
+          echo "pm2 Frontend instance is delted"
+          pm2 start "serve -s dist --listen 5173" --name Frontend --update-env
+          echo "pm2 Frontend instance is created again"
 
       # Step 7: Save PM2 process list
       - name: Save PM2 process list

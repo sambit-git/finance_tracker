@@ -6,11 +6,11 @@ import TransactionAdvanceFields from "./forms/TransactionAdvanceFields";
 import Modal from "../Modal";
 import { useModal } from "../../hooks/useModal";
 import axios from "axios";
-import { addTransaction } from "../../api/transactionServices";
 import {
-  addTransaction as addTransactionToStore,
+  addTransaction,
   updateTransaction,
-} from "../../store/slices/transactionsSlice";
+} from "../../api/transactionServices";
+import { addTransaction as addTransactionToStore } from "../../store/slices/transactionsSlice";
 import { updateAccountBalanceFromPayments } from "../../store/slices/accountsSlice";
 
 export function TransactionForm({ onClose, transaction }) {
@@ -153,15 +153,18 @@ export function TransactionForm({ onClose, transaction }) {
 
     try {
       let res;
-      if (transaction) res = await updateTransaction(newTransaction);
-      else res = await addTransaction(newTransaction);
-      dispatch(addTransactionToStore(res.transaction));
-      dispatch(
-        updateAccountBalanceFromPayments({
-          transactionType: res.transaction.type,
-          payments: res.transaction.payments,
-        })
-      );
+      if (transaction) {
+        res = await updateTransaction(transaction.id, newTransaction);
+      } else {
+        res = await addTransaction(newTransaction);
+        dispatch(addTransactionToStore(res.transaction));
+        dispatch(
+          updateAccountBalanceFromPayments({
+            transactionType: res.transaction.type,
+            payments: res.transaction.payments,
+          })
+        );
+      }
       console.log(res);
     } catch (error) {
       openModal("error", error.message);
