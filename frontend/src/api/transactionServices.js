@@ -21,3 +21,15 @@ export const addTransaction = async (transactionData) => {
     throw error;
   }
 };
+
+export const updateTransaction = async (id, transactionData) => {
+  try {
+    const { data } = await apiClient.patch(
+      `transactions/update/${id}`,
+      transactionData
+    );
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
