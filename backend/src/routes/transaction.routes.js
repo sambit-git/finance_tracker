@@ -2,7 +2,7 @@ import express from "express";
 import {
   createTransaction,
   getAllTransactions,
-  // updateTransactionStatus,
+  updateTransaction,
   getTransactionById,
   deleteTransaction,
 } from "../controllers/transaction.controller.js"; // Import the controller methods
@@ -15,11 +15,7 @@ router.post("/create", authenticateToken, createTransaction);
 router.get("/all", authenticateToken, getAllTransactions);
 
 // Update the status of a transaction
-// router.patch(
-//   "/accounts/:accountId/transactions/:transactionId",
-//   authenticateToken,
-//   updateTransactionStatus
-// );
+router.patch("/update/:id", authenticateToken, updateTransaction);
 
 // // Get a specific transaction by ID, including its items
 // router.get(
