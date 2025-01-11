@@ -5,12 +5,15 @@ import PaymentsForm from "./forms/PaymentsForm";
 import TransactionAdvanceFields from "./forms/TransactionAdvanceFields";
 import Modal from "../Modal";
 import { useModal } from "../../hooks/useModal";
-import axios from "axios";
+import { toLocalDatetimeInput } from "../../utils/dateUtils";
 import {
   addTransaction,
   updateTransaction,
 } from "../../api/transactionServices";
-import { addTransaction as addTransactionToStore } from "../../store/slices/transactionsSlice";
+import {
+  addTransaction as addTransactionToStore,
+  updateTransaction as updateTransactionToStore,
+} from "../../store/slices/transactionsSlice";
 import { updateAccountBalanceFromPayments } from "../../store/slices/accountsSlice";
 
 export function TransactionForm({ onClose, transaction }) {
@@ -23,12 +26,10 @@ export function TransactionForm({ onClose, transaction }) {
     payments: transactionPayments,
   } = transaction || {};
 
-  // console.log(transaction);
-
   const titleInputRef = useRef({ value: title || "" });
-  const typeInputRef = useRef({ value: type || "EXPENSE" });
+  const typeInputRef = useRef({ value: type || "debit" });
   const dateInputRef = useRef({
-    value: (timestamp || new Date().toISOString()).slice(0, 16),
+    value: toLocalDatetimeInput(timestamp || new Date().toISOString()),
   });
 
   const [items, setItems] = useState(transactionItems || []);
@@ -45,12 +46,13 @@ export function TransactionForm({ onClose, transaction }) {
   }, [items]);
 
   useEffect(() => {
-    setPayments((prevPayments) => {
-      return prevPayments.map((payment, index) =>
-        index === 0 ? { ...payment, amount: totalAmount } : payment
-      );
-    });
-  }, [totalAmount, setPayments]);
+    if (items.length > 0)
+      setPayments((prevPayments) => {
+        return prevPayments.map((payment, index) =>
+          index === 0 ? { ...payment, amount: totalAmount } : payment
+        );
+      });
+  }, [items, totalAmount, setPayments]);
 
   const {
     isOpen,
@@ -123,8 +125,6 @@ export function TransactionForm({ onClose, transaction }) {
       totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
 
     const finalAmount = totalAmount;
-
-    console.log(finalAmount);
     // +
     // Number(taxInputRef.current.value || 0) +
     // Number(tipInputRef.current.value || 0);
@@ -132,7 +132,7 @@ export function TransactionForm({ onClose, transaction }) {
     const newTransaction = {
       title: titleInputRef.current.value,
       type: typeInputRef.current.value,
-      timestamp: dateInputRef.current.value || new Date().toISOString(),
+      timestamp: new Date(dateInputRef.current.value || null).toISOString(),
       discountPercentage: 0,
       couponCode: "",
       couponDiscount: 0,
@@ -149,23 +149,21 @@ export function TransactionForm({ onClose, transaction }) {
       payments,
     };
 
-    console.log("New Transaction: ", newTransaction);
-
     try {
       let res;
       if (transaction) {
         res = await updateTransaction(transaction.id, newTransaction);
+        dispatch(updateTransactionToStore(res.transaction));
       } else {
         res = await addTransaction(newTransaction);
         dispatch(addTransactionToStore(res.transaction));
-        dispatch(
-          updateAccountBalanceFromPayments({
-            transactionType: res.transaction.type,
-            payments: res.transaction.payments,
-          })
-        );
       }
-      console.log(res);
+      dispatch(
+        updateAccountBalanceFromPayments({
+          transactionType: res.transaction.type,
+          payments: res.transaction.payments,
+        })
+      );
     } catch (error) {
       openModal("error", error.message);
     }
@@ -198,7 +196,7 @@ export function TransactionForm({ onClose, transaction }) {
             type="datetime-local"
             required
             ref={dateInputRef}
-            defaultValue={dateInputRef.current.value}
+            defaultValue={toLocalDatetimeInput(dateInputRef.current.value)}
             className="input-primary"
           />
         </div>

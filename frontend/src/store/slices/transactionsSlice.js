@@ -1,52 +1,4 @@
-// import { createSlice } from "@reduxjs/toolkit";
-
-// const initialState = {
-//   transactions: [],
-//   filters: {
-//     search: "",
-//     dateRange: {
-//       start: null,
-//       end: null,
-//     },
-//     categories: [],
-//   },
-//   loading: false,
-//   error: null,
-// };
-
-// const transactionsSlice = createSlice({
-//   name: "transactions",
-//   initialState,
-//   reducers: {
-//     setTransactions: (state, action) => {
-//       state.transactions = action.payload;
-//     },
-//     addTransaction: (state, action) => {
-//       state.transactions.push(action.payload);
-//     },
-//     updateTransaction: (state, action) => {
-//       const index = state.transactions.findIndex(
-//         (tx) => tx.id === action.payload.id
-//       );
-//       if (index !== -1) {
-//         state.transactions[index] = action.payload;
-//       }
-//     },
-//     setFilters: (state, action) => {
-//       state.filters = { ...state.filters, ...action.payload };
-//     },
-//   },
-// });
-
-// export const {
-//   setTransactions,
-//   addTransaction,
-//   updateTransaction,
-//   setFilters,
-// } = transactionsSlice.actions;
-// export default transactionsSlice.reducer;
-
-// // src/store/transactionsSlice.js
+// src/store/transactionsSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
 // Helper function to group transactions by date and calculate totals
@@ -107,6 +59,9 @@ const transactionsSlice = createSlice({
     },
     addTransaction(state, action) {
       state.transactions.unshift(action.payload);
+      state.transactions.sort(
+        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+      );
       state.groupedTransactions = groupTransactionsByDate(state.transactions);
     },
     updateTransaction(state, action) {
@@ -115,6 +70,9 @@ const transactionsSlice = createSlice({
       );
       if (index !== -1) {
         state.transactions[index] = action.payload;
+        state.transactions.sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
         state.groupedTransactions = groupTransactionsByDate(state.transactions);
       }
     },

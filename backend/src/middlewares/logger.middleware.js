@@ -1,8 +1,21 @@
 import logger from "../config/logger.config.js";
 
 export const loggerMiddleware = (req, res, next) => {
-  const message = `Request: ${req.method} ${req.url}`;
-  logger.info(message); // Log request details
+  // Log request details, headers, and parameters
+  const requestHeaders = JSON.stringify(req.headers, null, 2);
+  const requestParams = JSON.stringify(req.params, null, 2);
+  const requestQuery = JSON.stringify(req.query, null, 2);
+
+  logger.info(`Request: ${req.method} ${req.url}`);
+  logger.info(`Request Headers: ${requestHeaders}`);
+  logger.info(`Request Params: ${requestParams}`);
+  logger.info(`Request Query: ${requestQuery}`);
+
+  // Log request body (ensure body-parser middleware or similar is used earlier)
+  if (req.body) {
+    const requestBody = JSON.stringify(req.body, null, 2);
+    logger.info(`Request Body: ${requestBody}`);
+  }
 
   // Log response headers
   res.on("header", () => {
