@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { PlusCircle } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
+import { createAccount } from "../api/accountService";
+import { addAccount } from "../store/slices/accountsSlice";
 
 export function AccountForm({ onAccountAdded }) {
   const { user } = useSelector((state) => state.accounts);
@@ -8,9 +10,10 @@ export function AccountForm({ onAccountAdded }) {
   const typeInputRef = useRef();
   const balanceInputRef = useRef();
 
-  const handleSubmit = (e) => {
+  const dispatch = useDispatch();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return;
 
     const newAccount = {
       name: nameInputRef.current.value,
@@ -18,11 +21,12 @@ export function AccountForm({ onAccountAdded }) {
       balance: parseFloat(balanceInputRef.current.value),
     };
 
-    const { accounts } = useSelector((state) => state.accounts);
-    storage.setAccounts([...accounts, newAccount]);
+    const res = await createAccount(newAccount);
+
+    dispatch(addAccount(res.account));
 
     nameInputRef.current.value = "";
-    typeInputRef.current.value = "SAVINGS";
+    typeInputRef.current.value = "bank";
     balanceInputRef.current.value = "";
     onAccountAdded();
   };
@@ -63,9 +67,9 @@ export function AccountForm({ onAccountAdded }) {
             ref={typeInputRef}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           >
-            <option value="SAVINGS">Savings</option>
-            <option value="CHECKING">Checking</option>
-            <option value="CREDIT">Credit</option>
+            <option value="bank">Bank</option>
+            <option value="wallet">Digital Wallet</option>
+            <option value="cash">Cash</option>
             <option value="INVESTMENT">Investment</option>
           </select>
         </div>
