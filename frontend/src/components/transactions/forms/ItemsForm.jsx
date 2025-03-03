@@ -78,7 +78,7 @@ const ItemsForm = ({ items, setItems, handleChange }) => {
             <select
               required
               value={item.unit || "nos"}
-              onChange={(e) => handleChange(e, "unit", index, "item", Number)}
+              onChange={(e) => handleChange(e, "unit", index, "item")}
               className="input-secondary no-spinner"
             >
               <option value="pcs">pieces</option>
