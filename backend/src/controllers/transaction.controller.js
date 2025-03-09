@@ -1,5 +1,7 @@
+import { Op } from "sequelize";
 import model from "../models/index.js";
 import sequelize from "../config/database.config.js";
+import logger from "../config/logger.config.js";
 
 const { Transaction, TransactionItem, Payment, Account } = model;
 /**
@@ -205,30 +207,33 @@ export const getTransactionById = async (req, res) => {
 /**
  * Update a transaction with associated items and payments
  */
+// Helper functions for payment operations
+const reversePaymentEffect = (account, amount, type) => {
+  if (type === "credit") {
+    account.balance -= Number(amount);
+  } else {
+    account.balance += Number(amount);
+  }
+};
+
+const applyPaymentEffect = (account, amount, type) => {
+  if (type === "credit") {
+    account.balance += Number(amount);
+  } else {
+    if (account.balance < Number(amount)) {
+      throw new Error(`Insufficient funds in account ${account.id}`);
+    }
+    account.balance -= Number(amount);
+  }
+};
+
 export const updateTransaction = async (req, res, next) => {
-  const { id } = req.params; // Transaction ID
-  const {
-    title,
-    type,
-    timestamp,
-    totalAmount,
-    discountPercentage,
-    couponCode,
-    couponDiscount,
-    finalAmount,
-    status,
-    shipping,
-    orderNumber,
-    notes,
-    recipt,
-    items,
-    payments,
-  } = req.body;
+  const { id } = req.params;
+  const transactionData = req.body;
 
   try {
-    // Start a transaction (database transaction for atomicity)
-    const result = await sequelize.transaction(async (t) => {
-      // Fetch the existing transaction
+    const updatedTransaction = await sequelize.transaction(async (t) => {
+      // Fetch transaction with original data
       const transaction = await Transaction.findByPk(id, {
         include: [
           { model: TransactionItem, as: "items" },
@@ -236,198 +241,154 @@ export const updateTransaction = async (req, res, next) => {
         ],
         transaction: t,
       });
-      if (!transaction) throw new Error(`Transaction with ID ${id} not found`);
+      if (!transaction) throw new Error(`Transaction ${id} not found`);
+      const originalType = transaction.type; // Capture original type
 
-      // Step 1: Update Transaction Fields
-      const transactionUpdates = {
-        title,
-        type,
-        timestamp,
-        discountPercentage,
-        couponCode,
-        couponDiscount,
-        shipping,
-        status,
-        orderNumber,
-        notes,
-        recipt,
-        totalAmount,
-        finalAmount,
-      };
-      Object.keys(transactionUpdates).forEach((key) => {
-        if (transactionUpdates[key] !== undefined) {
-          transaction[key] = transactionUpdates[key];
+      // Update transaction fields
+      const updatableFields = [
+        "title",
+        "type",
+        "timestamp",
+        "totalAmount",
+        "discountPercentage",
+        "couponCode",
+        "couponDiscount",
+        "status",
+        "finalAmount",
+      ];
+      updatableFields.forEach((field) => {
+        if (transactionData[field] !== undefined) {
+          transaction[field] = transactionData[field];
         }
       });
 
-      // Step 2: Update Transaction Items
-      if (items) {
-        const existingItems = transaction.items || [];
-        const updatedItemIds = items.map((item) => item.id).filter(Boolean);
+      // Handle items
+      if (transactionData.items) {
+        const itemIds = transactionData.items.map((i) => i.id).filter(Boolean);
+        // Remove items not in request
+        await TransactionItem.destroy({
+          where: { transaction_id: id, id: { [Op.notIn]: itemIds } },
+          transaction: t,
+        });
 
-        // Remove items not in the request
-        for (const existingItem of existingItems) {
-          if (!updatedItemIds.includes(existingItem.id)) {
-            await existingItem.destroy({ transaction: t });
-          }
-        }
-
-        // Update or Add items
-        for (const item of items) {
-          if (item.id) {
-            // Update existing item
-            const existingItem = await TransactionItem.findByPk(item.id, {
-              transaction: t,
-            });
-            if (existingItem) {
-              await existingItem.update(item, { transaction: t });
-            }
-          } else {
-            // Add new item
-            await TransactionItem.create(
-              { ...item, transaction_id: transaction.id },
-              { transaction: t }
-            );
-          }
-        }
-      }
-
-      // Step 3: Recalculate Total and Final Amounts
-      const updatedItems = await TransactionItem.findAll({
-        where: { transaction_id: transaction.id },
-        transaction: t,
-      });
-      const computedTotalAmount = updatedItems.reduce(
-        (sum, item) => sum + parseFloat(item.finalAmount || 0),
-        0
-      );
-      transaction.totalAmount = totalAmount || computedTotalAmount;
-      transaction.finalAmount = finalAmount || computedTotalAmount;
-
-      // Step 4: Update Payments
-      if (payments) {
-        const existingPayments = transaction.payments || [];
-        const updatedPaymentIds = payments
-          .map((payment) => payment.id)
-          .filter(Boolean);
-
-        // Remove payments not in the request
-        for (const existingPayment of existingPayments) {
-          if (!updatedPaymentIds.includes(existingPayment.id)) {
-            const account = await Account.findByPk(existingPayment.account_id, {
-              transaction: t,
-            });
-            if (!account) {
-              throw new Error(
-                `Account with ID ${existingPayment.account_id} not found`
+        // Update or create items
+        await Promise.all(
+          transactionData.items.map(async (item) => {
+            if (item.id) {
+              await TransactionItem.update(item, {
+                where: { id: item.id },
+                transaction: t,
+              });
+            } else {
+              await TransactionItem.create(
+                {
+                  ...item,
+                  transaction_id: id,
+                },
+                { transaction: t }
               );
             }
+          })
+        );
+      }
 
-            // Reverse payment effect on account balance
-            if (transaction.type === "credit") {
-              account.balance -= existingPayment.amount;
-            } else {
-              account.balance += existingPayment.amount;
-            }
-            await account.save({ transaction: t });
-            await existingPayment.destroy({ transaction: t });
-          }
-        }
+      // Recalculate amounts
+      const items = await TransactionItem.findAll({
+        where: { transaction_id: id },
+        transaction: t,
+      });
+      const computedTotal = items.reduce(
+        (sum, item) => sum + Number(item.finalAmount),
+        0
+      );
+      transaction.totalAmount = transactionData.totalAmount ?? computedTotal;
+      transaction.finalAmount = transactionData.finalAmount ?? computedTotal;
 
-        // Update or Add payments
-        for (const payment of payments) {
-          if (payment.id) {
-            // Update existing payment
-            const existingPayment = await Payment.findByPk(payment.id, {
-              transaction: t,
-            });
-            if (existingPayment) {
+      // Handle payments
+      if (transactionData.payments) {
+        const paymentIds = transactionData.payments
+          .map((p) => p.id)
+          .filter(Boolean);
+        const existingPayments = transaction.payments || [];
+
+        // Remove payments not in request
+        await Promise.all(
+          existingPayments.map(async (payment) => {
+            if (!paymentIds.includes(payment.id)) {
               const account = await Account.findByPk(payment.account_id, {
                 transaction: t,
               });
-              if (!account) {
-                throw new Error(
-                  `Account with ID ${payment.account_id} not found`
-                );
-              }
+              reversePaymentEffect(account, payment.amount, originalType);
+              await account.save({ transaction: t });
+              await payment.destroy({ transaction: t });
+            }
+          })
+        );
 
-              // Reverse old payment effect
-              if (transaction.type === "credit") {
-                account.balance -= Number(existingPayment.amount);
-              } else {
-                account.balance += Number(existingPayment.amount);
-              }
+        // Process payments in request
+        await Promise.all(
+          transactionData.payments.map(async (payment) => {
+            if (payment.id) {
+              const existingPayment = await Payment.findByPk(payment.id, {
+                transaction: t,
+              });
+              const account = await Account.findByPk(payment.account_id, {
+                transaction: t,
+              });
 
-              // Apply new payment effect
-              if (transaction.type === "credit") {
-                account.balance += Number(payment.amount);
-              } else {
-                if (account.balance < Number(payment.amount)) {
-                  throw new Error(
-                    `Insufficient funds in account with ID ${payment.account_id}`
-                  );
-                }
-                account.balance -= Number(payment.amount);
-              }
+              // Reverse original effect
+              reversePaymentEffect(
+                account,
+                existingPayment.amount,
+                originalType
+              );
+              // Apply new effect
+              applyPaymentEffect(account, payment.amount, transaction.type);
+
               await account.save({ transaction: t });
               await existingPayment.update(payment, { transaction: t });
-            }
-          } else {
-            // Add new payment
-            const account = await Account.findByPk(payment.account_id, {
-              transaction: t,
-            });
-            if (!account) {
-              throw new Error(
-                `Account with ID ${payment.account_id} not found`
+            } else {
+              const account = await Account.findByPk(payment.account_id, {
+                transaction: t,
+              });
+              applyPaymentEffect(account, payment.amount, transaction.type);
+
+              await account.save({ transaction: t });
+              await Payment.create(
+                {
+                  ...payment,
+                  transaction_id: id,
+                  balance: account.balance,
+                },
+                { transaction: t }
               );
             }
-
-            // Apply payment effect
-            if (transaction.type === "credit") {
-              account.balance += payment.amount;
-            } else {
-              if (account.balance < payment.amount) {
-                throw new Error(
-                  `Insufficient funds in account with ID ${payment.account_id}`
-                );
-              }
-              account.balance -= payment.amount;
-            }
-            await account.save({ transaction: t });
-            await Payment.create(
-              {
-                ...payment,
-                transaction_id: transaction.id,
-                balance: account.balance,
-              },
-              { transaction: t }
-            );
-          }
-        }
+          })
+        );
       }
 
-      // Save the updated transaction
       await transaction.save({ transaction: t });
-
       return transaction;
     });
 
-    // Fetch the updated transaction with associated details
-    const updatedTransaction = await Transaction.findOne({
-      where: { id: result.id },
+    // Fetch fresh transaction data
+    const result = await Transaction.findByPk(id, {
       include: [
         { model: TransactionItem, as: "items" },
-        { model: Payment, as: "payments" },
+        {
+          model: Payment,
+          as: "payments",
+          include: [{ model: Account, as: "account" }],
+        },
       ],
     });
 
-    // Respond with the updated transaction
     return res.status(200).json({
       message: "Transaction updated successfully",
-      transaction: updatedTransaction,
+      transaction: result,
     });
   } catch (error) {
+    logger.error(`Transaction update failed: ${error.message}`);
     return next(error);
   }
 };
