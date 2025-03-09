@@ -84,7 +84,7 @@ export function TransactionForm({ onClose, transaction }) {
 
             // Handle updates based on field
             if (field === "mrp" || field === "quantity") {
-              const baseAmount = quantity * mrp;
+              const baseAmount = (quantity * mrp * 100) / 100;
               updatedItem.finalAmount =
                 discountPercent > 0
                   ? baseAmount - (baseAmount * discountPercent) / 100
@@ -122,7 +122,10 @@ export function TransactionForm({ onClose, transaction }) {
     openModal("loading", "Saving the transaction..."); // Open modal with loading state
 
     if (items.length == 0)
-      totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+      totalAmount = payments.reduce(
+        (sum, payment) => sum + Number(payment.amount),
+        0
+      );
 
     const finalAmount = totalAmount;
     // +
@@ -151,6 +154,7 @@ export function TransactionForm({ onClose, transaction }) {
 
     try {
       let res;
+      // console.log(newTransaction);
       if (transaction) {
         res = await updateTransaction(transaction.id, newTransaction);
         dispatch(updateTransactionToStore(res.transaction));
